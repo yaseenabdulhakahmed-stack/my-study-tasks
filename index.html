@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -5,37 +6,244 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>مهامي الدراسية</title>
 <style>
-body{font-family:Arial;background:#eef2f7;padding:20px;text-align:center}
-main{max-width:450px;margin:auto;background:white;padding:20px;border-radius:15px}
-input{padding:12px;width:60%}
-button{padding:12px;background:#1769aa;color:white;border:0;border-radius:7px;margin:4px}
-li{margin:12px;text-align:right}
+*{box-sizing:border-box}
+body{margin:0;font-family:Tahoma,Arial;background:#f1f5fb;color:#24344d}
+header{background:linear-gradient(120deg,#15365e,#2878bd);color:white;padding:30px 18px;text-align:center}
+header h1{margin:0 0 10px}
+header p{margin:0;color:#dcecff}
+main{max-width:850px;margin:25px auto;padding:0 15px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.card,.panel{background:white;border-radius:14px;padding:18px;box-shadow:0 3px 14px #152f5010}
+.card{text-align:center}
+.card strong{display:block;font-size:27px;color:#2167a7}
+.card span{font-size:13px;color:#718096}
+h2{font-size:19px;color:#193f69;margin-top:0}
+input,select{width:100%;padding:12px;border:1px solid #d6dfeb;border-radius:9px;font:inherit;background:white}
+.fields{display:grid;grid-template-columns:2fr 1fr 1fr;gap:9px}
+button{border:0;border-radius:8px;padding:10px 14px;font:inherit;cursor:pointer}
+.add{background:#2676ba;color:white;margin-top:12px;width:100%}
+.task{display:flex;align-items:center;gap:10px;border-bottom:1px solid #edf0f5;padding:13px 0}
+.task:last-child{border:0}
+.task input{width:19px;height:19px;accent-color:#16845b}
+.taskinfo{flex:1;min-width:0}
+.taskinfo strong{overflow-wrap:anywhere}
+.taskinfo small{display:block;color:#77869a;margin-top:6px}
+.done strong{text-decoration:line-through;color:#8994a2}
+.actions{display:flex;gap:5px}
+.edit{background:#eaf3fc;color:#205c91}
+.delete{background:#fff0f0;color:#c43f3f}
+.filters{display:flex;gap:9px;margin:14px 0}
+.filters input{flex:1;min-width:0}
+.filters select{width:145px}
+.progress{height:10px;background:#e8edf4;border-radius:20px;overflow:hidden;margin-top:10px}
+.progress div{height:100%;background:#16845b;width:0}
+.empty{text-align:center;color:#8793a2;padding:22px}
+footer{text-align:center;color:#8793a2;font-size:12px;padding:20px}
+@media(max-width:600px){
+.fields{grid-template-columns:1fr 1fr}
+.fields input:first-child{grid-column:1/-1}
+.cards{gap:7px}
+.card{padding:13px 5px}
+.card strong{font-size:23px}
+.task{flex-wrap:wrap}
+.taskinfo{flex:1}
+.actions{margin-right:29px;width:calc(100% - 29px)}
+.actions button{flex:1}
+}
 </style>
 </head>
 <body>
+<header>
+<h1>📚 مهامي الدراسية</h1>
+<p>نظّم واجباتك وتابع تقدمك الدراسي</p>
+</header>
 <main>
-<h2>📚 مهامي الدراسية</h2>
-<p>اكتب واجبك وأضفه إلى قائمتك</p>
-<input id="task" placeholder="اكتب المهمة هنا">
-<button onclick="addTask()">إضافة</button>
-<ul id="tasks"></ul>
+<div class="cards">
+<div class="card"><strong id="total">0</strong><span>إجمالي المهام</span></div>
+<div class="card"><strong id="remaining">0</strong><span>المهام المتبقية</span></div>
+<div class="card"><strong id="completed">0</strong><span>المهام المكتملة</span></div>
+</div>
+
+<section class="panel">
+<h2 id="formTitle">➕ إضافة مهمة جديدة</h2>
+<form id="taskForm">
+<div class="fields">
+<input id="taskName" placeholder="اسم المهمة أو الواجب" required maxlength="120">
+<input id="subject" placeholder="المادة الدراسية" maxlength="40">
+<input id="deadline" type="date" aria-label="موعد التسليم">
+</div>
+<button class="add" id="saveButton">إضافة المهمة</button>
+<button type="button" id="cancelButton" hidden>إلغاء التعديل</button>
+</form>
+</section>
+
+<section class="panel" style="margin-top:18px">
+<h2>📋 قائمة المهام</h2>
+<div class="filters">
+<input id="search" placeholder="ابحث عن مهمة...">
+<select id="filter">
+<option value="all">كل المهام</option>
+<option value="active">المتبقية</option>
+<option value="done">المكتملة</option>
+</select>
+</div>
+<div id="taskList"></div>
+<div id="empty" class="empty">لا توجد مهام حتى الآن 🌟</div>
+<div style="margin-top:15px">
+نسبة الإنجاز: <strong id="percent">0%</strong>
+<div class="progress"><div id="bar"></div></div>
+</div>
+</section>
 </main>
+<footer>مهامي الدراسية © 2026</footer>
+
 <script>
-function addTask(){
-let input=document.getElementById('task');
-if(!input.value.trim())return;
-let li=document.createElement('li');
-li.append(document.createTextNode(input.value+' '));
-let done=document.createElement('button');
-done.textContent='تمت';
-done.onclick=()=>li.style.textDecoration='line-through';
-let del=document.createElement('button');
-del.textContent='حذف';
-del.onclick=()=>li.remove();
-li.append(done,del);
-document.getElementById('tasks').append(li);
-input.value='';
+const KEY="study_tasks_v2";
+let tasks=[];
+let editing=null;
+
+try{
+tasks=JSON.parse(localStorage.getItem(KEY)||"[]");
+if(!Array.isArray(tasks))tasks=[];
+}catch(e){tasks=[];}
+
+const el=id=>document.getElementById(id);
+
+function save(){
+localStorage.setItem(KEY,JSON.stringify(tasks));
+render();
 }
+
+function resetForm(){
+editing=null;
+el("taskForm").reset();
+el("formTitle").textContent="➕ إضافة مهمة جديدة";
+el("saveButton").textContent="إضافة المهمة";
+el("cancelButton").hidden=true;
+}
+
+el("taskForm").addEventListener("submit",function(e){
+e.preventDefault();
+const name=el("taskName").value.trim();
+if(!name)return;
+
+const data={
+name,
+subject:el("subject").value.trim(),
+deadline:el("deadline").value
+};
+
+if(editing){
+const item=tasks.find(t=>t.id===editing);
+if(item)Object.assign(item,data);
+}else{
+tasks.unshift({
+id:Date.now().toString()+Math.random(),
+...data,
+done:false
+});
+}
+resetForm();
+save();
+});
+
+el("cancelButton").onclick=resetForm;
+
+function editTask(id){
+const t=tasks.find(x=>x.id===id);
+if(!t)return;
+editing=id;
+el("taskName").value=t.name;
+el("subject").value=t.subject;
+el("deadline").value=t.deadline;
+el("formTitle").textContent="✏️ تعديل المهمة";
+el("saveButton").textContent="حفظ التعديلات";
+el("cancelButton").hidden=false;
+window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function deleteTask(id){
+if(!confirm("هل تريد حذف هذه المهمة؟"))return;
+tasks=tasks.filter(t=>t.id!==id);
+if(editing===id)resetForm();
+save();
+}
+
+function toggleTask(id){
+const t=tasks.find(x=>x.id===id);
+if(t)t.done=!t.done;
+save();
+}
+
+function render(){
+const list=el("taskList");
+list.replaceChildren();
+
+const q=el("search").value.trim().toLowerCase();
+const f=el("filter").value;
+
+const visible=tasks.filter(t=>{
+const matches=(t.name+" "+t.subject).toLowerCase().includes(q);
+return matches&&(f==="all"||(f==="done"?t.done:!t.done));
+});
+
+el("empty").hidden=visible.length>0;
+el("empty").textContent=tasks.length?"لا توجد نتائج مطابقة":"لا توجد مهام حتى الآن 🌟";
+
+visible.forEach(t=>{
+const row=document.createElement("div");
+row.className="task"+(t.done?" done":"");
+
+const check=document.createElement("input");
+check.type="checkbox";
+check.checked=t.done;
+check.setAttribute("aria-label","إنجاز المهمة");
+check.onchange=()=>toggleTask(t.id);
+
+const info=document.createElement("div");
+info.className="taskinfo";
+
+const name=document.createElement("strong");
+name.textContent=t.name;
+
+const details=document.createElement("small");
+details.textContent=[t.subject||"بدون مادة",t.deadline?"موعد التسليم: "+t.deadline:""].filter(Boolean).join(" • ");
+
+info.append(name,details);
+
+const actions=document.createElement("div");
+actions.className="actions";
+
+const edit=document.createElement("button");
+edit.className="edit";
+edit.textContent="تعديل";
+edit.onclick=()=>editTask(t.id);
+
+const del=document.createElement("button");
+del.className="delete";
+del.textContent="حذف";
+del.onclick=()=>deleteTask(t.id);
+
+actions.append(edit,del);
+row.append(check,info,actions);
+list.append(row);
+});
+
+const total=tasks.length;
+const completed=tasks.filter(t=>t.done).length;
+const remaining=total-completed;
+const percent=total?Math.round(completed/total*100):0;
+
+el("total").textContent=total;
+el("completed").textContent=completed;
+el("remaining").textContent=remaining;
+el("percent").textContent=percent+"%";
+el("bar").style.width=percent+"%";
+}
+
+el("search").addEventListener("input",render);
+el("filter").addEventListener("change",render);
+render();
 </script>
 </body>
 </html>
